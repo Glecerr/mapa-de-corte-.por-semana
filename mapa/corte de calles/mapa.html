@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Cortes de Calles</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 70%;
+            float: left;
+        }
+        #sidebar {
+            height: 600px;
+            width: 28%;
+            float: right;
+            overflow-y: auto;
+            padding: 10px;
+            border-left: 2px solid #ccc;
+        }
+        #search-box {
+            margin: 10px 0;
+            width: 100%;
+            padding: 10px;
+        }
+        h1, h2 {
+            clear: both;
+        }
+        .closure-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapa de Cortes de Calles</h1>
+    <input type="text" id="search-box" placeholder="Ponga aquí su barrio/municipio" />
+    
+    <div id="map"></div>
+    <div id="sidebar">
+        <h2>Cortes de Calles</h2>
+        <div id="closure-list"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([-34.6186, -58.4431], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var closures = [
+            { lat: -34.611, lng: -58.377, reason: 'Obra en construcción', area: 'San Nicolás', streets: 'Calle A y Calle B' },
+            { lat: -34.615, lng: -58.380, reason: 'Accidente de tránsito', area: 'Balvanera', streets: 'Calle C y Calle D' },
+            { lat: -34.620, lng: -58.383, reason: 'Evento público', area: 'Recoleta', streets: 'Calle E y Calle F' },
+        ];
+
+        var areaCoordinates = {
+            'san nicolás': [-34.611, -58.377],
+            'balvanera': [-34.615, -58.380],
+            'recoleta': [-34.620, -58.383]
+        };
+
+        var markers = [];
+
+        function addStreetClosures(filteredClosures) {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            var closureList = document.getElementById('closure-list');
+            closureList.innerHTML = '';
+
+            filteredClosures.forEach(function (closure) {
+                var marker = L.marker([closure.lat, closure.lng])
+                    .addTo(map)
+                    .bindPopup(`Corte de calle: ${closure.reason} - Barrio: ${closure.area}`);
+                markers.push(marker);
+
+                var closureItem = document.createElement('div');
+                closureItem.className = 'closure-item';
+                closureItem.innerHTML = `<strong>${closure.reason}</strong><br>Calles: ${closure.streets}`;
+                closureList.appendChild(closureItem);
+            });
+        }
+
+        document.getElementById('search-box').addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase();
+            var filteredClosures = closures.filter(closure => closure.area.toLowerCase().includes(searchTerm));
+            addStreetClosures(filteredClosures);
+
+            if (areaCoordinates[searchTerm]) {
+                map.setView(areaCoordinates[searchTerm], 15);
+            } else if (filteredClosures.length > 0) {
+                map.setView([filteredClosures[0].lat, filteredClosures[0].lng], 15);
+            }
+        });
+
+        addStreetClosures(closures);
+    </script>
+</body>
+</html>
